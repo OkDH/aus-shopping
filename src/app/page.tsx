@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/lib/db";
 
 interface ProductType {
@@ -30,6 +30,7 @@ interface ProductWithPrices extends Product {
 }
 
 const MARKETS = ["Woolworths", "Coles", "Aldi", "IGA", "하나로마트", "K-Fresh 마트", "BIGW", "KMART"];
+const ITEMS_PER_PAGE = 10;
 
 const DEFAULT_PRODUCT_TYPES = [
   "우유", "과일", "채소", "육류", "해산물", "빵", "음료", "간식", "기타"
@@ -45,6 +46,8 @@ export default function Home() {
   const [formMode, setFormMode] = useState<FormMode>("add");
   const [editingProduct, setEditingProduct] = useState<ProductWithPrices | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     productType: "",
@@ -115,6 +118,8 @@ export default function Home() {
     });
     setFormMode("edit");
     setShowForm(true);
+    setCurrentPage(1);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const openAddPriceForm = (product: ProductWithPrices) => {
@@ -130,6 +135,8 @@ export default function Home() {
     });
     setFormMode("price");
     setShowForm(true);
+    setCurrentPage(1);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -312,6 +319,12 @@ export default function Home() {
     return perUnitA - perUnitB;
   });
 
+  const totalPages = Math.ceil(sortedProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = sortedProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const handleProductTypeSelect = (name: string) => {
     const existing = productTypes.find((pt) => pt.name === name);
     setFormData({
@@ -353,7 +366,7 @@ export default function Home() {
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div ref={formRef} className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">{getFormTitle()}</h2>
           <form
             onSubmit={formMode === "edit" ? handleUpdateProduct : formMode === "price" ? handleAddPrice : handleAddProduct}
@@ -477,63 +490,86 @@ export default function Home() {
             {searchQuery ? "검색 결과가 없습니다." : "아직 등록된 제품이 없습니다."}
           </p>
         ) : (
-          <ul className="space-y-3">
-            {sortedProducts.map((product) => {
-              const best = getBestPrice(product);
-              return (
-                <li key={product.id} className="p-4 border rounded-md">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">
-                        {product.productType?.name} - {product.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{product.defaultUnit}</p>
-                    </div>
-                    {best && (
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-green-600">{best.market}</p>
-                        <p className="text-lg font-bold">${best.price.toFixed(2)}</p>
-                        <p className="text-xs text-gray-500">{getPricePerUnitLabel(product.defaultUnit)} ${getPricePerUnit(best.price, best.volume, product.defaultUnit).toFixed(2)}</p>
+          <>
+            <ul className="space-y-3">
+              {paginatedProducts.map((product) => {
+                const best = getBestPrice(product);
+                return (
+                  <li key={product.id} className="p-4 border rounded-md">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">
+                          {product.productType?.name} - {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">{product.defaultUnit}</p>
                       </div>
-                    )}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {product.prices.map((price) => (
-                      <span key={price.id} className="inline-flex items-center gap-1 text-xs bg-gray-100 px-2 py-1 rounded">
-                        {price.market}: ${price.price.toFixed(2)} ({price.volume}{product.defaultUnit})
-                        <button
-                          onClick={() => handleDeletePrice(price.id)}
-                          className="ml-1 text-red-500 hover:text-red-700 font-bold"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => openAddPriceForm(product)}
-                      className="text-sm px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200"
-                    >
-                      + 가격 추가
-                    </button>
-                    <button
-                      onClick={() => openEditForm(product)}
-                      className="text-sm px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="text-sm px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      {best && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-green-600">{best.market}</p>
+                          <p className="text-lg font-bold">${best.price.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">{getPricePerUnitLabel(product.defaultUnit)} ${getPricePerUnit(best.price, best.volume, product.defaultUnit).toFixed(2)}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {product.prices.map((price) => (
+                        <span key={price.id} className="inline-flex items-center gap-1 text-xs bg-gray-100 px-2 py-1 rounded">
+                          {price.market}: ${price.price.toFixed(2)} ({price.volume}{product.defaultUnit})
+                          <button
+                            onClick={() => handleDeletePrice(price.id)}
+                            className="ml-1 text-red-500 hover:text-red-700 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => openAddPriceForm(product)}
+                        className="text-sm px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200"
+                      >
+                        + 가격 추가
+                      </button>
+                      <button
+                        onClick={() => openEditForm(product)}
+                        className="text-sm px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="text-sm px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {totalPages > 1 && (
+              <div className="mt-4 flex justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 rounded-md bg-gray-100 disabled:opacity-50 hover:bg-gray-200"
+                >
+                  이전
+                </button>
+                <span className="px-3 py-1">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 rounded-md bg-gray-100 disabled:opacity-50 hover:bg-gray-200"
+                >
+                  다음
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
