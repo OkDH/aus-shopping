@@ -29,7 +29,7 @@ interface ProductWithPrices extends Product {
   productType?: ProductType;
 }
 
-const MARKETS = ["Woolworths", "Coles", "Aldi", "IGA", "하나로마트", "K-Fresh 마트"];
+const MARKETS = ["Woolworths", "Coles", "Aldi", "IGA", "하나로마트", "K-Fresh 마트", "BIGW", "KMART"];
 
 const DEFAULT_PRODUCT_TYPES = [
   "우유", "과일", "채소", "육류", "해산물", "빵", "음료", "간식", "기타"
