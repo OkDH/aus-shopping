@@ -512,17 +512,26 @@ export default function Home() {
                       )}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {product.prices.map((price) => (
-                        <span key={price.id} className="inline-flex items-center gap-1 text-xs bg-gray-100 px-2 py-1 rounded">
-                          {price.market}: ${price.price.toFixed(2)} ({price.volume}{product.defaultUnit})
-                          <button
-                            onClick={() => handleDeletePrice(price.id)}
-                            className="ml-1 text-red-500 hover:text-red-700 font-bold"
+                      {product.prices.map((price) => {
+                        const isBest = best?.id === price.id;
+                        return (
+                          <span
+                            key={price.id}
+                            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${
+                              isBest ? "bg-green-100 text-green-800 font-semibold border border-green-300" : "bg-gray-100"
+                            }`}
                           >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                            {price.market}: ${price.price.toFixed(2)} ({price.volume}{product.defaultUnit})
+                            {isBest && <span className="ml-1">✓</span>}
+                            <button
+                              onClick={() => handleDeletePrice(price.id)}
+                              className="ml-1 text-red-500 hover:text-red-700 font-bold"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
                     <div className="mt-3 flex gap-2">
                       <button
