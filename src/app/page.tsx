@@ -29,7 +29,7 @@ interface ProductWithPrices extends Product {
   productType?: ProductType;
 }
 
-const MARKETS = ["Woolworths", "Coles", "Aldi", "IGA", "하나로마트", "K-Fresh 마트", "BIGW", "KMART"];
+const MARKETS = ["Woolworths", "Coles", "Aldi", "IGA", "하나로마트", "K-Fresh 마트", "BIGW", "KMART", "Market Asia", "FUJI MART"];
 const ITEMS_PER_PAGE = 10;
 
 const DEFAULT_PRODUCT_TYPES = [
