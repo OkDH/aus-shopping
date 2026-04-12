@@ -512,7 +512,11 @@ export default function Home() {
                       )}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {product.prices.map((price) => {
+                      {[...product.prices].sort((a, b) => {
+                        const aPerUnit = getPricePerUnit(a.price, a.volume, product.defaultUnit);
+                        const bPerUnit = getPricePerUnit(b.price, b.volume, product.defaultUnit);
+                        return aPerUnit - bPerUnit;
+                      }).map((price) => {
                         const isBest = best?.id === price.id;
                         return (
                           <span
