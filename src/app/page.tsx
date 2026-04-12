@@ -273,7 +273,7 @@ export default function Home() {
     if (volume === 0) return 0;
     if (unit === "개") return price / volume;
     if (unit === "L") return price / volume;
-    if (unit === "kg") return price / (volume / 1000);
+    if (unit === "kg") return price / volume;
     return price / (volume / 100);
   };
 
