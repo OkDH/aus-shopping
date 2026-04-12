@@ -273,12 +273,14 @@ export default function Home() {
     if (volume === 0) return 0;
     if (unit === "개") return price / volume;
     if (unit === "L") return price / volume;
+    if (unit === "kg") return price / (volume / 1000);
     return price / (volume / 100);
   };
 
   const getPricePerUnitLabel = (unit: string): string => {
     if (unit === "개") return "1개당";
     if (unit === "L") return "1L당";
+    if (unit === "kg") return "1kg당";
     return `100${unit}당`;
   };
 
@@ -400,6 +402,7 @@ export default function Home() {
                   <option value="ml">ml</option>
                   <option value="L">L</option>
                   <option value="g">g</option>
+                  <option value="kg">kg</option>
                   <option value="개">개</option>
                 </select>
               </div>
