@@ -248,7 +248,7 @@ export default function ShopPage() {
             disabled={!inputText.trim()}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            파싱
+            쇼핑 추천
           </button>
           <button
             onClick={() => {
