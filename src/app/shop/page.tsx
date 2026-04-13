@@ -129,16 +129,24 @@ export default function ShopPage() {
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && inputText.trim()) {
       e.preventDefault();
-      const newItem: ShopItem = {
+      addItemsFromText(inputText);
+    }
+  };
+
+  const addItemsFromText = (text: string) => {
+    const lines = text.split("\n").filter((line) => line.trim());
+    const newItems: ShopItem[] = lines.map((line) => {
+      const name = line.trim();
+      return {
         id: crypto.randomUUID(),
-        name: inputText.trim(),
-        matchedProducts: matchProducts(inputText.trim()),
-        isUnknown: matchProducts(inputText.trim()).length === 0,
+        name,
+        matchedProducts: matchProducts(name),
+        isUnknown: matchProducts(name).length === 0,
         checked: false,
       };
-      setShopItems([...shopItems, newItem]);
-      setInputText("");
-    }
+    });
+    setShopItems([...shopItems, ...newItems]);
+    setInputText("");
   };
 
   const removeItem = (id: string) => {
@@ -227,14 +235,31 @@ export default function ShopPage() {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">쇼핑리스트 입력</h2>
-        <p className="text-xs text-gray-500 mb-3">제품명 입력 후 Enter</p>
+        <p className="text-xs text-gray-500 mb-3">줄바꿈으로 제품명 구분</p>
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleInputKeyDown}
           placeholder="우유&#10;빵&#10;사과"
           className="w-full h-32 p-3 border rounded-md resize-y text-sm"
         />
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => addItemsFromText(inputText)}
+            disabled={!inputText.trim()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            파싱
+          </button>
+          <button
+            onClick={() => {
+              setInputText("");
+              setShopItems([]);
+            }}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+          >
+            초기화
+          </button>
+        </div>
       </div>
 
       {shopItems.length > 0 && (
