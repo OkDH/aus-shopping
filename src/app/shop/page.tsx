@@ -474,46 +474,6 @@ export default function ShopPage() {
         </div>
       )}
 
-      {shopItems.filter((i) => i.isUnknown).length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-500">기타 (DB에 없음)</h2>
-          <div className="space-y-2">
-            {shopItems
-              .filter((item) => item.isUnknown)
-              .map((item) => (
-                <label
-                  key={item.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                    item.checked
-                      ? "bg-gray-50 border-gray-200 line-through opacity-60"
-                      : "hover:bg-gray-50 border-gray-100"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => toggleCheck(item.id)}
-                    className="w-5 h-5 rounded accent-gray-400"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-500">{item.name}</p>
-                    <p className="text-xs text-gray-400">DB에 등록되지 않은 제품</p>
-                  </div>
-                  {item.checked && (
-                    <span className="text-gray-400 text-sm">구매 완료</span>
-                  )}
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="ml-2 text-gray-400 hover:text-gray-600"
-                  >
-                    ×
-                  </button>
-                </label>
-              ))}
-          </div>
-        </div>
-      )}
-
       {shopItems.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p className="text-lg mb-2">쇼핑리스트가 비어있습니다</p>
