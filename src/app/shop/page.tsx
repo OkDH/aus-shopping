@@ -358,7 +358,69 @@ export default function ShopPage() {
 
       {itemRecommendations.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">제품별 최저가</h2>
+          <h2 className="text-lg font-semibold mb-4">쇼핑리스트</h2>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {(() => {
+              const groupedByMarket = itemRecommendations.reduce((acc, rec) => {
+                if (!acc[rec.bestMarket]) acc[rec.bestMarket] = [];
+                const item = shopItems.find((i) => i.name === rec.itemName);
+                if (item) acc[rec.bestMarket].push({ ...item, rec });
+                return acc;
+              }, {} as Record<string, (ShopItem & { rec: ItemRecommendation })[]>);
+
+              return Object.entries(groupedByMarket)
+                .sort()
+                .map(([market, items]) => (
+                  <div key={market} className="border-b last:border-0 pb-4 last:pb-0 mb-4 last:mb-0">
+                    <h3 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      {market}
+                    </h3>
+                    <div className="space-y-2">
+                      {items.map((item) => (
+                        <label
+                          key={item.id}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                            item.checked
+                              ? "bg-gray-50 border-gray-200 line-through opacity-60"
+                              : "hover:bg-gray-50 border-gray-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={() => toggleCheck(item.id)}
+                            className="w-5 h-5 rounded accent-green-600"
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium">{item.name}</p>
+                            {!item.checked && item.rec && (
+                              <p className="text-xs text-gray-500">
+                                ${item.rec.bestPrice.toFixed(2)} ({item.rec.volume}{item.rec.unit}) - 100{item.rec.unit}당 ${item.rec.perUnit.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                          {item.checked && (
+                            <span className="text-green-600 text-sm">구매 완료</span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ));
+            })()}
+          </div>
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm text-gray-500">
+              체크된 아이템: {shopItems.filter((i) => i.checked).length} / {shopItems.filter((i) => !i.isUnknown).length}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {itemRecommendations.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">가격 상세</h2>
           <div className="space-y-3">
             {itemRecommendations.map((rec, index) => (
               <div key={index} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
@@ -391,128 +453,17 @@ export default function ShopPage() {
         </div>
       )}
 
-      {marketResults.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">마켓별 추천</h2>
-          <div className="space-y-4">
-            {marketResults.map((result, index) => (
-              <div
-                key={result.market}
-                className={`p-4 rounded-lg border ${
-                  result.isRecommended
-                    ? "bg-green-50 border-green-300"
-                    : "bg-gray-50 border-gray-200"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {result.isRecommended && (
-                      <span className="text-lg">📍</span>
-                    )}
-                    {index === 1 && !result.isRecommended && (
-                      <span className="text-lg">🥈</span>
-                    )}
-                    {index === 2 && !result.isRecommended && (
-                      <span className="text-lg">🥉</span>
-                    )}
-                    <h3 className="font-semibold">{result.market}</h3>
-                    {result.isRecommended && (
-                      <span className="text-xs px-2 py-0.5 bg-green-600 text-white rounded-full">
-                        추천
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold">${result.total.toFixed(2)}</p>
-                    {!result.isRecommended && marketResults[0] && (
-                      <p className="text-xs text-gray-500">
-                        +${(result.total - marketResults[0].total).toFixed(2)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {result.items.map((item, i) => (
-                    <div
-                      key={i}
-                      className={`flex justify-between ${
-                        item.isBest ? "text-green-700 font-medium" : ""
-                      }`}
-                    >
-                      <span>
-                        {item.itemName}
-                        {item.isBest && <span className="ml-1 text-green-600">✓</span>}
-                      </span>
-                      <span>
-                        ${item.price.toFixed(2)} ({item.volume}{item.unit})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {shopItems.filter((i) => !i.isUnknown).length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">쇼핑리스트</h2>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {shopItems
-              .filter((item) => !item.isUnknown)
-              .map((item) => {
-                const rec = itemRecommendations.find((r) => r.itemName === item.name);
-
-                return (
-                  <label
-                    key={item.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                      item.checked
-                        ? "bg-gray-50 border-gray-200 line-through opacity-60"
-                        : "hover:bg-gray-50 border-gray-100"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.checked}
-                      onChange={() => toggleCheck(item.id)}
-                      className="w-5 h-5 rounded accent-green-600"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{item.name}</p>
-                        {rec && !item.checked && (
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                            {rec.bestMarket}
-                          </span>
-                        )}
-                      </div>
-                      {rec && !item.checked && (
-                        <p className="text-xs text-gray-500">
-                          ${rec.bestPrice.toFixed(2)} ({rec.volume}{rec.unit}) - 100{rec.unit}당 ${rec.perUnit.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                    {item.checked && (
-                      <span className="text-green-600 text-sm">구매 완료</span>
-                    )}
-                  </label>
-                );
-              })}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-sm text-gray-500">
-              체크된 아이템: {shopItems.filter((i) => i.checked).length} / {shopItems.filter((i) => !i.isUnknown).length}
-            </p>
-          </div>
-        </div>
-      )}
-
       {shopItems.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p className="text-lg mb-2">쇼핑리스트가 비어있습니다</p>
-          <p className="text-sm">제품명을 입력하고 Enter를 눌러 추가하세요</p>
+          <p className="text-sm">제품명을 입력하고 파싱 버튼을 눌러주세요</p>
+        </div>
+      )}
+
+      {marketResults.length === 0 && shopItems.filter((i) => !i.isUnknown).length === 0 && shopItems.filter((i) => i.isUnknown).length > 0 && (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg mb-2">일치하는 제품이 없습니다</p>
+          <p className="text-sm">다른 제품명으로 시도해주세요</p>
         </div>
       )}
     </div>
