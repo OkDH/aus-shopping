@@ -33,6 +33,9 @@ export default function RootLayout({
               <Link href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
                 제품 리스트
               </Link>
+              <Link href="/shop" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                쇼핑
+              </Link>
               <Link href="/dashboard" className="text-sm font-medium text-gray-600 hover:text-gray-900">
                 대시보드
               </Link>
