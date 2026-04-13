@@ -47,9 +47,20 @@ interface MarketResult {
     volume: number;
     unit: string;
     perUnit: number;
+    market: string;
     isBest: boolean;
   }[];
   isRecommended: boolean;
+}
+
+interface ItemRecommendation {
+  itemName: string;
+  bestMarket: string;
+  bestPrice: number;
+  volume: number;
+  unit: string;
+  perUnit: number;
+  allPrices: { market: string; price: number; perUnit: number }[];
 }
 
 const STORAGE_KEY = "aus-shopping-list";
@@ -192,6 +203,7 @@ export default function ShopPage() {
             volume: bestPrice.volume,
             unit: matchedProduct.defaultUnit,
             perUnit: getPricePerUnit(bestPrice.price, bestPrice.volume, matchedProduct.defaultUnit),
+            market: market,
             isBest: false,
           });
         }
@@ -218,6 +230,50 @@ export default function ShopPage() {
     }
 
     return results;
+  }, [shopItems, products]);
+
+  const itemRecommendations: ItemRecommendation[] = useMemo(() => {
+    if (shopItems.length === 0 || products.length === 0) return [];
+
+    const recommendations: ItemRecommendation[] = [];
+
+    shopItems.forEach((shopItem) => {
+      if (shopItem.isUnknown) return;
+
+      const matchedProduct = shopItem.matchedProducts[0];
+      if (!matchedProduct) return;
+
+      const allPrices: { market: string; price: number; perUnit: number }[] = [];
+      const allMarkets = [...new Set(products.flatMap((p) => p.prices.map((pr) => pr.market)))];
+
+      allMarkets.forEach((market) => {
+        const bestPrice = getBestPrice(matchedProduct, market);
+        if (bestPrice) {
+          allPrices.push({
+            market,
+            price: bestPrice.price,
+            perUnit: getPricePerUnit(bestPrice.price, bestPrice.volume, matchedProduct.defaultUnit),
+          });
+        }
+      });
+
+      if (allPrices.length === 0) return;
+
+      allPrices.sort((a, b) => a.perUnit - b.perUnit);
+      const best = allPrices[0];
+
+      recommendations.push({
+        itemName: shopItem.name,
+        bestMarket: best.market,
+        bestPrice: best.price,
+        volume: matchedProduct.prices.find(p => p.market === best.market && p.price === best.price)?.volume || 0,
+        unit: matchedProduct.defaultUnit,
+        perUnit: best.perUnit,
+        allPrices,
+      });
+    });
+
+    return recommendations;
   }, [shopItems, products]);
 
   const getPerUnitLabel = (unit: string): string => {
@@ -287,7 +343,7 @@ export default function ShopPage() {
                     : "bg-blue-50 text-blue-700"
                 }`}
               >
-                {item.isUnknown ? "❓" : "✓"} {item.name}
+                {item.isUnknown ? "❓" : ""} {item.name}
                 <button
                   onClick={() => removeItem(item.id)}
                   className="ml-1 text-gray-400 hover:text-gray-600"
@@ -295,6 +351,41 @@ export default function ShopPage() {
                   ×
                 </button>
               </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {itemRecommendations.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">제품별 최저가</h2>
+          <div className="space-y-3">
+            {itemRecommendations.map((rec, index) => (
+              <div key={index} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600 font-semibold">{rec.bestMarket}</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="font-medium">{rec.itemName}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold">${rec.bestPrice.toFixed(2)}</span>
+                    <span className="text-xs text-gray-500 ml-2">
+                      ({rec.volume}{rec.unit})
+                    </span>
+                  </div>
+                </div>
+                {rec.allPrices.length > 1 && (
+                  <div className="mt-2 text-xs text-gray-500 space-y-1">
+                    {rec.allPrices.slice(1).map((p, i) => (
+                      <div key={i} className="flex justify-between">
+                        <span>{p.market}</span>
+                        <span>${p.price.toFixed(2)} (100{rec.unit}당 ${p.perUnit.toFixed(2)})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -371,17 +462,7 @@ export default function ShopPage() {
             {shopItems
               .filter((item) => !item.isUnknown)
               .map((item) => {
-                const product = item.matchedProducts[0];
-                const bestMarket = product
-                  ? marketResults.find((r) =>
-                      r.items.some(
-                        (i) =>
-                          i.itemName === item.name &&
-                          i.productName === product.name &&
-                          i.isBest
-                      )
-                    )
-                  : null;
+                const rec = itemRecommendations.find((r) => r.itemName === item.name);
 
                 return (
                   <label
@@ -399,10 +480,17 @@ export default function ShopPage() {
                       className="w-5 h-5 rounded accent-green-600"
                     />
                     <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
-                      {bestMarket && (
-                        <p className="text-xs text-green-600">
-                          {bestMarket.market}에서 가장 저렴
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{item.name}</p>
+                        {rec && !item.checked && (
+                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                            {rec.bestMarket}
+                          </span>
+                        )}
+                      </div>
+                      {rec && !item.checked && (
+                        <p className="text-xs text-gray-500">
+                          ${rec.bestPrice.toFixed(2)} ({rec.volume}{rec.unit}) - 100{rec.unit}당 ${rec.perUnit.toFixed(2)}
                         </p>
                       )}
                     </div>
