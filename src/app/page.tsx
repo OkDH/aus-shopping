@@ -22,6 +22,9 @@ interface Price {
   market: string;
   price: number;
   volume: number;
+  purchasedAt: string;
+  isOnSale: boolean;
+  salePercent: number;
 }
 
 interface ProductWithPrices extends Product {
@@ -57,6 +60,9 @@ export default function Home() {
     market: "Woolworths",
     price: "",
     volume: "",
+    purchasedAt: new Date().toISOString().split("T")[0],
+    isOnSale: false,
+    salePercent: 0,
   });
 
   useEffect(() => {
@@ -100,6 +106,9 @@ export default function Home() {
       market: "Woolworths",
       price: "",
       volume: "",
+      purchasedAt: new Date().toISOString().split("T")[0],
+      isOnSale: false,
+      salePercent: 0,
     });
     setEditingProduct(null);
     setFormMode("add");
@@ -115,6 +124,9 @@ export default function Home() {
       market: "Woolworths",
       price: "",
       volume: "",
+      purchasedAt: new Date().toISOString().split("T")[0],
+      isOnSale: false,
+      salePercent: 0,
     });
     setFormMode("edit");
     setShowForm(true);
@@ -132,6 +144,9 @@ export default function Home() {
       market: "Woolworths",
       price: "",
       volume: "",
+      purchasedAt: new Date().toISOString().split("T")[0],
+      isOnSale: false,
+      salePercent: 0,
     });
     setFormMode("price");
     setShowForm(true);
@@ -264,6 +279,9 @@ export default function Home() {
       market: formData.market,
       price: parseFloat(formData.price),
       volume: parseInt(formData.volume),
+      purchasedAt: formData.purchasedAt,
+      isOnSale: formData.isOnSale,
+      salePercent: formData.isOnSale ? parseInt(formData.salePercent.toString()) : 0,
     });
 
     if (priceError) {
@@ -456,6 +474,39 @@ export default function Home() {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">구매 날짜</label>
+                    <input
+                      type="date"
+                      value={formData.purchasedAt}
+                      onChange={(e) => setFormData({ ...formData, purchasedAt: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isOnSale"
+                      checked={formData.isOnSale}
+                      onChange={(e) => setFormData({ ...formData, isOnSale: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <label htmlFor="isOnSale" className="text-sm font-medium text-gray-700">세일</label>
+                  </div>
+                  {formData.isOnSale && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">세일 %</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.salePercent}
+                        onChange={(e) => setFormData({ ...formData, salePercent: parseInt(e.target.value) || 0 })}
+                        className="w-full px-3 py-2 border rounded-md"
+                        placeholder="예: 20"
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -508,6 +559,7 @@ export default function Home() {
                           <p className="text-sm font-medium text-green-600">{best.market}</p>
                           <p className="text-lg font-bold">${best.price.toFixed(2)}</p>
                           <p className="text-xs text-gray-500">{getPricePerUnitLabel(product.defaultUnit)} ${getPricePerUnit(best.price, best.volume, product.defaultUnit).toFixed(2)}</p>
+                          {best.isOnSale && <p className="text-xs text-red-500 font-medium">{best.salePercent}% 세일</p>}
                         </div>
                       )}
                     </div>
@@ -518,6 +570,7 @@ export default function Home() {
                         return aPerUnit - bPerUnit;
                       }).map((price) => {
                         const isBest = best?.id === price.id;
+                        const originalPrice = price.isOnSale ? price.price / (1 - price.salePercent / 100) : null;
                         return (
                           <span
                             key={price.id}
@@ -525,7 +578,8 @@ export default function Home() {
                               isBest ? "bg-green-100 text-green-800 font-semibold border border-green-300" : "bg-gray-100"
                             }`}
                           >
-                            {price.market}: ${price.price.toFixed(2)} ({price.volume}{product.defaultUnit})
+                            {price.market}: {price.isOnSale && <span className="line-through text-red-400">${originalPrice?.toFixed(2)} </span>}<span className={price.isOnSale ? "text-red-500 font-semibold" : ""}>${price.price.toFixed(2)}</span> ({price.volume}{product.defaultUnit})
+                            {price.isOnSale && <span className="text-red-500">🔥{price.salePercent}%</span>}
                             {isBest && <span className="ml-1">✓</span>}
                             <button
                               onClick={() => handleDeletePrice(price.id)}
